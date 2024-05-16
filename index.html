@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>On-Prem Comment Intelligence Engine | Privacy-First Collaboration System Case Study</title>
+  <meta name="description" content="A black-and-white case study on a privacy-first collaboration system for ingesting comment streams, retrieving current records, summarizing threads, and routing critical signals without external data egress.">
+  <style>
+    :root {
+      --bg: #f3f3f3;
+      --paper: #ffffff;
+      --ink: #0c0c0c;
+      --muted: #5b5b5b;
+      --soft: #8a8a8a;
+      --line: #c8c8c8;
+      --line-strong: #2b2b2b;
+      --panel: #ededed;
+      --panel-deep: #dfdfdf;
+      --shade: #f8f8f8;
+      --shadow: rgba(0, 0, 0, 0.06);
+      --mono: "SFMono-Regular", "SF Mono", "Menlo", "Consolas", monospace;
+      --serif: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Times New Roman", serif;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: var(--serif);
+      background:
+        radial-gradient(circle at top left, rgba(0, 0, 0, 0.035), transparent 24rem),
+        linear-gradient(180deg, #efefef 0%, #f6f6f6 24%, #f2f2f2 100%);
+      line-height: 1.62;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page {
+      width: min(1180px, calc(100vw - 2rem));
+      margin: 0 auto;
+      padding: 1rem 0 4rem;
+    }
+
+    .masthead,
+    .section,
+    .closing-note {
+      background: var(--paper);
+      border: 1px solid var(--line-strong);
+      box-shadow: 0 14px 40px var(--shadow);
+    }
+
+    .masthead {
+      display: grid;
+      grid-template-columns: minmax(0, 1.75fr) minmax(280px, 0.95fr);
+      gap: 1.5rem;
+      padding: 1.5rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .eyebrow,
+    .section-tag,
+    .mini-label,
+    figcaption,
+    .toc a,
+    .code-note {
+      font-family: var(--mono);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 0.72rem;
+    }
+
+    .eyebrow {
+      margin: 0 0 1rem;
+      color: var(--muted);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.3rem, 4vw, 4.6rem);
+      line-height: 0.98;
+      font-weight: 600;
+      letter-spacing: -0.04em;
+      max-width: 12ch;
+    }
+
+    .lede {
+      margin: 1.25rem 0 0;
+      max-width: 66ch;
+      font-size: 1.08rem;
+    }
+
+    .governance-strip {
+      margin-top: 1.35rem;
+      padding-top: 0.95rem;
+      border-top: 1px solid var(--line);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.7rem;
+    }
+
+    .governance-strip span,
+    .meta-card,
+    .boundary-note,
+    pre {
+      border: 1px solid var(--line-strong);
+      background: var(--shade);
+    }
+
+    .governance-strip span {
+      padding: 0.45rem 0.65rem;
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .sidebar {
+      display: grid;
+      gap: 0.9rem;
+      align-content: start;
+    }
+
+    .meta-card {
+      padding: 1rem;
+      background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.015), transparent 28%),
+        var(--shade);
+    }
+
+    .meta-card strong,
+    .fact-grid strong {
+      display: block;
+      font-family: var(--sans);
+      font-size: 1.45rem;
+      line-height: 1;
+      margin-top: 0.2rem;
+    }
+
+    .meta-card p,
+    .fact-grid p,
+    figcaption,
+    .note,
+    .toc p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .fact-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.8rem;
+    }
+
+    .frame {
+      display: grid;
+      grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+      gap: 1.2rem;
+      align-items: start;
+    }
+
+    .toc {
+      position: sticky;
+      top: 1rem;
+      padding: 1rem;
+      border: 1px solid var(--line-strong);
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(10px);
+    }
+
+    .toc p {
+      margin-bottom: 0.8rem;
+      font-family: var(--sans);
+      font-size: 0.95rem;
+      color: var(--ink);
+    }
+
+    .toc ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .toc a {
+      text-decoration: none;
+      color: var(--muted);
+    }
+
+    .story {
+      display: grid;
+      gap: 1.2rem;
+    }
+
+    .section {
+      padding: 1.35rem;
+    }
+
+    h2 {
+      margin: 0 0 1rem;
+      font-family: var(--mono);
+      font-size: 1rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding-bottom: 0.85rem;
+      border-bottom: 1px solid var(--line-strong);
+    }
+
+    .section-tag {
+      margin: 0 0 0.8rem;
+      color: var(--soft);
+    }
+
+    p {
+      margin: 0 0 1rem;
+      max-width: 74ch;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+      gap: 1.1rem;
+    }
+
+    .boundary {
+      border: 1.5px solid var(--line-strong);
+      padding: 1rem;
+      background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.03), transparent 5rem),
+        var(--paper);
+    }
+
+    .boundary h3,
+    .rail-card h3 {
+      margin: 0 0 0.7rem;
+      font-size: 1rem;
+      font-family: var(--sans);
+    }
+
+    .boundary-note,
+    .rail-card {
+      padding: 0.85rem;
+    }
+
+    .rail-card {
+      border: 1px solid var(--line);
+      background: var(--panel);
+    }
+
+    .rail-card + .rail-card,
+    .boundary-note + .boundary-note {
+      margin-top: 0.8rem;
+    }
+
+    .rail-card ul,
+    .section ul {
+      margin: 0.55rem 0 0;
+      padding-left: 1.1rem;
+    }
+
+    .figure-block {
+      margin: 1.1rem 0;
+      border: 1px solid var(--line-strong);
+      background: linear-gradient(180deg, #f8f8f8 0%, #fcfcfc 100%);
+      padding: 1rem;
+    }
+
+    figure {
+      margin: 0;
+    }
+
+    figcaption {
+      margin-top: 0.75rem;
+      padding-top: 0.7rem;
+      border-top: 1px solid var(--line);
+      line-height: 1.5;
+    }
+
+    svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .diagram-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      fill: #4f4f4f;
+    }
+
+    .diagram-title {
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 700;
+      fill: #111111;
+    }
+
+    .diagram-copy {
+      font-family: var(--sans);
+      font-size: 12px;
+      fill: #222222;
+    }
+
+    pre {
+      margin: 1rem 0;
+      overflow-x: auto;
+      padding: 0.95rem;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      font-family: var(--mono);
+      white-space: pre-wrap;
+    }
+
+    .code-note {
+      color: var(--soft);
+      margin: 0 0 0.5rem;
+    }
+
+    .quote {
+      margin: 1rem 0;
+      padding: 1rem 1rem 1rem 1.1rem;
+      border-left: 3px solid var(--line-strong);
+      background: var(--panel);
+      font-size: 1.02rem;
+    }
+
+    .closing-note {
+      margin-top: 1.2rem;
+      padding: 1.25rem 1.35rem;
+      background:
+        linear-gradient(90deg, rgba(0, 0, 0, 0.05), transparent 28%),
+        var(--paper);
+    }
+
+    .closing-note p:last-child,
+    .section p:last-child {
+      margin-bottom: 0;
+    }
+
+    @media (max-width: 980px) {
+      .masthead,
+      .frame,
+      .split {
+        grid-template-columns: 1fr;
+      }
+
+      .toc {
+        position: static;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        width: min(100vw - 1rem, 100%);
+      }
+
+      .masthead,
+      .section,
+      .closing-note {
+        padding: 1rem;
+      }
+
+      .fact-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="masthead">
+      <section>
+        <p class="eyebrow">Privacy-First Collaboration System Case Study / Internal Comment Operations / Controlled Processing</p>
+        <h1>On-Prem Comment Intelligence Engine</h1>
+        <p class="lede">This system was designed for a familiar failure mode in customer operations: too many comments, too many half-resolved threads, and too little certainty about what changed last. Teams were not missing context because they lacked effort. They were missing it because the volume of updates had outgrown manual review, while the privacy cost of sending those conversations to third-party services remained unacceptable. The result is a deliberately narrow collaboration system: ingest internal discussion streams, retrieve the latest approved records, summarize what matters, and escalate critical signals without treating privacy as a marketing claim.</p>
+        <div class="governance-strip">
+          <span>Local model hosting</span>
+          <span>RAG summarization</span>
+          <span>No external data egress</span>
+          <span>Queue prioritization</span>
+          <span>Audit trail</span>
+        </div>
+      </section>
+      <aside class="sidebar">
+        <div class="meta-card">
+          <p class="mini-label">Operating Posture</p>
+          <strong>Firm Control</strong>
+          <p>The system is built to answer from current internal records, not from general memory, and to keep comment data inside company-controlled infrastructure.</p>
+        </div>
+        <div class="fact-grid">
+          <div class="meta-card">
+            <p class="mini-label">Primary Inputs</p>
+            <strong>4+</strong>
+            <p>Comment threads, escalations, approvals, account notes.</p>
+          </div>
+          <div class="meta-card">
+            <p class="mini-label">Alert Mode</p>
+            <strong>Proactive</strong>
+            <p>Critical signals route before a person has time to skim everything.</p>
+          </div>
+          <div class="meta-card">
+            <p class="mini-label">Validation</p>
+            <strong>Golden Sets</strong>
+            <p>Precision, recall, and latency budgets are treated as release gates.</p>
+          </div>
+          <div class="meta-card">
+            <p class="mini-label">Release Form</p>
+            <strong>Dockerized</strong>
+            <p>Containerized services support repeatable deployment and rollback.</p>
+          </div>
+        </div>
+      </aside>
+    </header>
+
+    <div class="frame">
+      <nav class="toc" aria-label="Table of contents">
+        <p>Case Study Ledger</p>
+        <ul>
+          <li><a href="#pressure">01 / Overload Conditions</a></li>
+          <li><a href="#ingestion">02 / Ingestion and Retrieval</a></li>
+          <li><a href="#synthesis">03 / Summarization and Signal Detection</a></li>
+          <li><a href="#routing">04 / Alert Routing and Human Escalation</a></li>
+          <li><a href="#limits">05 / Permissions and Operating Limits</a></li>
+        </ul>
+      </nav>
+
+      <div class="story">
+        <section class="section" id="pressure">
+          <p class="section-tag">System Record / 01</p>
+          <h2>Overload Conditions</h2>
+          <div class="split">
+            <div>
+              <p>The case begins with information overload, not with model selection. Customer-facing teams were handling continuous comment flows across CRM notes, support follow-ups, campaign approvals, exception handling, and negotiation-stage discussion. Each stream was useful on its own. Together they produced a pattern that operations leaders know well: the most urgent detail often arrived in the same form as ordinary noise. A refund request could sit beside a contract risk, a blocked launch, or a compliance concern, all written in the same flat text box and all arriving faster than a human reviewer could normalize them.</p>
+              <p>That pressure created three practical failures. First, people spent review time restating thread history to one another because nobody trusted that the visible summary reflected the latest approved record. Second, genuine critical signals were found late because they were buried in long exchanges, duplicated across tools, or phrased indirectly. Third, the privacy boundary around customer discussion was fragile: the temptation to paste internal comments into consumer tools increased precisely when the workload became least manageable. The system therefore had to do two things at once. It had to reduce reading load, and it had to reduce the operational reasons that cause private data to drift outside governed infrastructure.</p>
+              <p>The project was framed as a collaboration system rather than a generic assistant because the real objective was not conversation for its own sake. The objective was disciplined movement of internal knowledge between people with different roles and permissions. Summaries had to be anchored to recent records. Alerts had to be routed according to escalation policy. Negotiation-stage items had to be held for human judgment. And every meaningful system action had to leave an audit trail so teams could inspect why a conclusion was shown, who saw it, and what evidence supported it at that moment.</p>
+              <p>Stakeholder interviews made the operating cost visible. Support leads described hours lost to reconstructing thread timelines before they could even decide who should respond. Marketing reviewers described launch approvals stalling because an unresolved comment from two days earlier could not be distinguished from an already settled concern. Account teams described the reputational risk of answering from memory when internal databases had changed since the last handoff. These are ordinary coordination failures, but in aggregate they become expensive. They extend first-response time, distort escalation quality, and pull senior staff into low-leverage reading work. The case for the system was therefore not abstract AI efficiency. It was the narrower claim that recent, permission-safe context should be easier to access than stale, improvised memory.</p>
+              <div class="quote">Privacy here is a design constraint, not a mood. If the system cannot prove where data moved, what was retrieved, and which permission checks were applied, it is not private enough to trust.</div>
+            </div>
+            <aside>
+              <div class="rail-card">
+                <h3>Source Pressure</h3>
+                <ul>
+                  <li>High-volume comment streams in several internal tools.</li>
+                  <li>Escalation paths with distinct owners and service levels.</li>
+                  <li>Latest-record requirements for customer and account answers.</li>
+                  <li>Human review required for sensitive negotiation contexts.</li>
+                </ul>
+              </div>
+              <div class="rail-card">
+                <h3>Control Assumptions</h3>
+                <ul>
+                  <li>Data remains inside company-controlled infrastructure.</li>
+                  <li>Model outputs are subordinate to retrieved evidence.</li>
+                  <li>Alerting is policy-driven, not purely generative.</li>
+                  <li>Auditing is mandatory for both reads and escalations.</li>
+                </ul>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="section" id="ingestion">
+          <p class="section-tag">System Record / 02</p>
+          <h2>Ingestion and Retrieval</h2>
+          <p>The first control layer is ingestion. Before summarization or question answering can be useful, comment streams have to be normalized into a common operating form. In this project that meant mapping thread sources, triage rules, escalation paths, and SLAs with stakeholders up front, then feeding those inputs through a queue-based pipeline that could enforce order under load. Threads from support, campaign approvals, account notes, and executive review channels were not treated as interchangeable text. Each source carried metadata about owner, urgency, account, stage, retention class, and allowed audiences. That metadata became as important as the message body itself, because it drove both retrieval filtering and alert routing.</p>
+          <p>Once admitted, messages were assigned priority in a message queue so urgent threads could be processed ahead of routine backlog. The queue also enabled streaming responses: analysts could see a response assemble from retrieved evidence rather than wait for a full batch cycle, which matters when the immediate need is to confirm whether a record changed in the last few minutes. The internal database was indexed for recency because the failure mode to avoid was stale confidence. A fluent answer drawn from last week’s state is worse than no answer at all when teams are making customer commitments.</p>
+          <p>Normalizing these sources also solved a less visible problem: incompatible thread shape. Some systems store comments as flat notes, some as reply chains, some as event logs with intermittent human annotations. A privacy-first collaboration system cannot rely on users to reconcile those differences mentally every time they ask a question. The ingestion lattice converts those uneven structures into a shared envelope with consistent identifiers, timestamps, actors, and policy labels. That normalization step is what makes later retrieval inspectable. When an analyst clicks into supporting evidence, they should see not only the retrieved text but also which source produced it, which retention class applies, and whether the item was updated after the last summary was generated.</p>
+          <div class="figure-block">
+            <figure>
+              <svg viewBox="0 0 1100 620" role="img" aria-labelledby="lattice-title lattice-desc">
+                <title id="lattice-title">Ingestion lattice with permission boundary</title>
+                <desc id="lattice-desc">Multiple thread sources feed a normalizer, chunk and redact stage, retrieval indices, synthesis queue, and alert channels inside a restricted processing boundary.</desc>
+                <defs>
+                  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#111111"></path>
+                  </marker>
+                </defs>
+                <rect x="18" y="18" width="1064" height="584" fill="#fcfcfc" stroke="#222222" stroke-width="2"></rect>
+                <text x="44" y="52" class="diagram-label">Figure A / Ingestion lattice</text>
+                <text x="44" y="78" class="diagram-title">Restricted processing segment with explicit permission boundary</text>
+                <rect x="40" y="104" width="1020" height="468" rx="14" fill="#f5f5f5" stroke="#222222" stroke-width="2" stroke-dasharray="8 8"></rect>
+                <text x="58" y="130" class="diagram-label">Permission boundary / internal compute only</text>
+
+                <rect x="70" y="170" width="180" height="64" rx="10" fill="#ffffff" stroke="#1d1d1d" stroke-width="1.6"></rect>
+                <text x="92" y="198" class="diagram-title">CRM comment feed</text>
+                <text x="92" y="218" class="diagram-copy">account notes, deal context</text>
+
+                <rect x="70" y="256" width="180" height="64" rx="10" fill="#ffffff" stroke="#1d1d1d" stroke-width="1.6"></rect>
+                <text x="92" y="284" class="diagram-title">Support escalations</text>
+                <text x="92" y="304" class="diagram-copy">tickets, reopen events, SLA flags</text>
+
+                <rect x="70" y="342" width="180" height="64" rx="10" fill="#ffffff" stroke="#1d1d1d" stroke-width="1.6"></rect>
+                <text x="92" y="370" class="diagram-title">Campaign approvals</text>
+                <text x="92" y="390" class="diagram-copy">creative reviews, launch blockers</text>
+
+                <rect x="70" y="428" width="180" height="64" rx="10" fill="#ffffff" stroke="#1d1d1d" stroke-width="1.6"></rect>
+                <text x="92" y="456" class="diagram-title">Executive threads</text>
+                <text x="92" y="476" class="diagram-copy">exceptions, policy decisions</text>
+
+                <rect x="314" y="205" width="190" height="90" rx="12" fill="#ececec" stroke="#111111" stroke-width="1.8"></rect>
+                <text x="340" y="237" class="diagram-title">Source normalizer</text>
+                <text x="340" y="258" class="diagram-copy">thread ids, owners, stage, SLA</text>
+                <text x="340" y="278" class="diagram-copy">dedupe and queue priority</text>
+
+                <rect x="314" y="352" width="190" height="90" rx="12" fill="#ececec" stroke="#111111" stroke-width="1.8"></rect>
+                <text x="340" y="384" class="diagram-title">Chunk + redact</text>
+                <text x="340" y="405" class="diagram-copy">windowing, retention tags</text>
+                <text x="340" y="425" class="diagram-copy">remove disallowed fields</text>
+
+                <rect x="580" y="176" width="190" height="90" rx="12" fill="#ffffff" stroke="#111111" stroke-width="1.8"></rect>
+                <text x="606" y="208" class="diagram-title">Vector retrieval index</text>
+                <text x="606" y="229" class="diagram-copy">semantic neighborhood</text>
+                <text x="606" y="249" class="diagram-copy">comment chunk evidence</text>
+
+                <rect x="580" y="316" width="190" height="90" rx="12" fill="#ffffff" stroke="#111111" stroke-width="1.8"></rect>
+                <text x="606" y="348" class="diagram-title">SQL recency index</text>
+                <text x="606" y="369" class="diagram-copy">latest account state</text>
+                <text x="606" y="389" class="diagram-copy">freshness over recall alone</text>
+
+                <rect x="844" y="176" width="176" height="90" rx="12" fill="#ececec" stroke="#111111" stroke-width="1.8"></rect>
+                <text x="870" y="208" class="diagram-title">Synthesis queue</text>
+                <text x="870" y="229" class="diagram-copy">ordered response jobs</text>
+                <text x="870" y="249" class="diagram-copy">stream partial output</text>
+
+                <rect x="844" y="316" width="176" height="90" rx="12" fill="#ffffff" stroke="#111111" stroke-width="1.8"></rect>
+                <text x="870" y="348" class="diagram-title">Alert channels</text>
+                <text x="870" y="369" class="diagram-copy">ops, account owner, review</text>
+                <text x="870" y="389" class="diagram-copy">policy-approved summaries only</text>
+
+                <rect x="844" y="456" width="176" height="76" rx="12" fill="#ffffff" stroke="#111111" stroke-width="1.8"></rect>
+                <text x="870" y="488" class="diagram-title">Audit ledger</text>
+                <text x="870" y="509" class="diagram-copy">read path, alert path, actor</text>
+
+                <line x1="250" y1="202" x2="314" y2="238" stroke="#111111" stroke-width="1.6" marker-end="url(#arrow)"></line>
+                <line x1="250" y1="288" x2="314" y2="248" stroke="#111111" stroke-width="1.6" marker-end="url(#arrow)"></line>
+                <line x1="250" y1="374" x2="314" y2="385" stroke="#111111" stroke-width="1.6" marker-end="url(#arrow)"></line>
+                <line x1="250" y1="460" x2="314" y2="397" stroke="#111111" stroke-width="1.6" marker-end="url(#arrow)"></line>
+                <line x1="409" y1="295" x2="409" y2="352" stroke="#111111" stroke-width="1.6" marker-end="url(#arrow)"></line>
+                <line x1="504" y1="236" x2="580" y2="221" stroke="#111111" stroke-width="1.6" marker-end="url(#arrow)"></line>
+                <line x1="504" y1="396" x2="580" y2="361" stroke="#111111" stroke-width="1.6" marker-end="url(#arrow)"></line>
+                <line x1="770" y1="221" x2="844" y2="221" stroke="#111111" stroke-width="1.6" marker-end="url(#arrow)"></line>
+                <line x1="770" y1="361" x2="844" y2="221" stroke="#111111" stroke-width="1.6" marker-end="url(#arrow)"></line>
+                <line x1="932" y1="266" x2="932" y2="316" stroke="#111111" stroke-width="1.6" marker-end="url(#arrow)"></line>
+                <line x1="932" y1="406" x2="932" y2="456" stroke="#111111" stroke-width="1.6" marker-end="url(#arrow)"></line>
+
+                <text x="58" y="545" class="diagram-label">Local inference service: Gemma-31B invoked only after retrieval</text>
+                <text x="58" y="562" class="diagram-label">and policy filters pass</text>
+              </svg>
+              <figcaption>Figure A. The lattice treats comment processing as a governed pipeline rather than a free-form chat surface. Source metadata, redaction rules, and a recency index sit in front of synthesis so the system can answer from the newest authorized records while keeping all processing inside the marked boundary.</figcaption>
+            </figure>
+          </div>
+          <div class="split">
+            <div>
+              <p>Retrieval combines two distinct needs. One is semantic recall across fragmented discussion. The other is hard recency: when an analyst asks whether pricing, status, or ownership changed, the system must privilege the newest internal record. That is why the design pairs vector search with a structured recency index instead of relying on embeddings alone. Retrieval filters narrow the candidate set by account, workspace, stage, retention class, and viewer permissions before synthesis begins. This both reduces hallucinated joins and enforces least privilege in the portion of the stack where mistakes are easiest to miss.</p>
+              <p class="code-note">Retrieval guardrail</p>
+              <pre><code>SELECT chunk_id, thread_id, updated_at, sensitivity
+FROM comment_chunks
+WHERE account_id = :account_id
+  AND workspace_id IN (:allowed_workspaces)
+  AND sensitivity &lt;= :viewer_clearance
+  AND updated_at &gt;= NOW() - INTERVAL '30 days'
+ORDER BY updated_at DESC
+LIMIT 40;</code></pre>
+              <p>That query is intentionally plain. The important point is not clever syntax. It is the order of operations. Permission checks and freshness filters happen before retrieved text reaches the synthesis layer. A private system that retrieves broadly and hides selectively at the end is already too permissive. By contrast, this design keeps the answer surface narrow from the start, which is how operators preserve trust when different teams share infrastructure but not identical access rights.</p>
+              <p>Operationally, this also improves failure handling. If one source connector lags, the queue can continue processing other eligible streams while marking freshness risk for the degraded source. If a retrieval request spans multiple accounts or workspaces, the system can reject the scope before synthesis rather than compose a partial answer that looks complete. Those behaviors are not glamorous, but they are what make the engine usable in day-to-day collaboration. Teams need the system to be predictable under pressure, including when the correct output is an explicit refusal, a freshness warning, or a request to narrow the question to a permitted record set.</p>
+            </div>
+            <aside>
+              <div class="boundary">
+                <h3>Trust Boundary Notes</h3>
+                <div class="boundary-note">
+                  <p class="mini-label">Boundary 1</p>
+                  <p>Source adapters accept only approved internal feeds. No anonymous uploads and no user-side paste-through to external APIs.</p>
+                </div>
+                <div class="boundary-note">
+                  <p class="mini-label">Boundary 2</p>
+                  <p>Chunking occurs with retention labels attached so later summarization can inherit deletion and masking policy.</p>
+                </div>
+                <div class="boundary-note">
+                  <p class="mini-label">Boundary 3</p>
+                  <p>Queue priority can accelerate urgent work, but it cannot bypass permission or audit checks.</p>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="section" id="synthesis">
+          <p class="section-tag">System Record / 03</p>
+          <h2>Summarization and Signal Detection</h2>
+          <p>Once retrieval is constrained, summarization becomes useful instead of merely fluent. The engine’s job is not to rewrite every thread into polished prose. It is to reduce review cost while preserving the ability to inspect source evidence. In practice that means producing compact thread summaries, recent-change digests, and direct answers tied to retrieved passages. The locally hosted Gemma-31B service sits behind those controls and works as a synthesis component, not as an unchecked decision maker. If retrieval returns weak evidence, the system should say so plainly. If there are conflicting recent records, the summary should surface the conflict rather than resolve it by style.</p>
+          <p>Critical-signal detection runs in parallel with summarization because the business risk of missed urgency is different from the risk of imperfect prose. The team defined critical signals with stakeholders in advance: escalation markers, account churn language, launch blockers, compliance concerns, negotiation-stage sensitivity, repeated reopen events, and other cues that materially change the required response path. Some of these cues are lexical. Some depend on metadata such as who wrote the comment, whether the SLA window is nearly exhausted, or whether the account is already in exception review. A sensible system combines both. Pure text classification misses too much context. Pure rule systems miss phrasing drift. The productive approach is layered judgment: rules for hard boundaries, model assistance for nuance, human review when confidence or sensitivity crosses a threshold.</p>
+          <p>This distinction between summarization and detection is easy to blur, but the operational consequences differ. A summary may legitimately compress ten comments into three sentences if the trace back to evidence remains intact. An alert detector, by contrast, should be conservative about what it omits. Missing a churn warning or a blocked launch note because the phrase was softened in conversation is unacceptable. That is why proactive alerts are treated as a separate path with their own evaluation set, not as a by-product of a good-looking summary. The system can reuse retrieval context across both paths, but the success criteria are different: summaries must be readable and anchored, while detectors must be timely, selective, and policy-aligned.</p>
+          <div class="split">
+            <div>
+              <p>Evaluation matters here because private systems still fail if they are merely private. Golden sets anchor the expected behavior for summarization, extraction, triage, and escalation. Precision and recall are tracked so the team can see the tradeoff between over-alerting and under-alerting. Latency budgets matter because a system that flags urgent content after the escalation window is operationally equivalent to a system that missed it. Streaming responses from the queue help on the answering side, but alerting paths still require deterministic steps: detect, classify, route, record, and confirm delivery.</p>
+              <p class="code-note">Critical-signal routing sketch</p>
+              <pre><code>if signal.score &gt;= 0.88 or signal.rule_hit in HARD_STOPS:
+    route = "immediate-review"
+elif thread.stage == "negotiation" and signal.score &gt;= 0.62:
+    route = "account-owner-plus-legal"
+elif sla_minutes_remaining &lt;= 30 and signal.score &gt;= 0.55:
+    route = "priority-ops-queue"
+else:
+    route = "summary-only"
+
+write_audit(thread.id, signal.type, route, viewer.id)</code></pre>
+              <p>This kind of logic is intentionally legible. Operators need to know why an alert moved, and reviewers need to be able to compare the route taken with the route that policy required. The model may contribute a score or a structured explanation, but the final movement through the organization stays tied to explicit thresholds, stage labels, and recorded ownership.</p>
+              <p>That legibility is also what makes golden-set evaluation actionable. When reviewers find a false positive, they can inspect whether the failure came from retrieval scope, a rule that was too broad, a score threshold that was too low, or a missing metadata feature. When they find a miss, they can see whether the thread lacked the right escalation label, whether the time window excluded the decisive comment, or whether the system deferred a case that should have been hard-stopped. Precision and recall are therefore not reported as generic model metrics. They are used to adjust the operational contract between the detector and the humans who absorb its output.</p>
+            </div>
+            <aside>
+              <div class="rail-card">
+                <h3>What the summary must preserve</h3>
+                <ul>
+                  <li>What changed most recently.</li>
+                  <li>What remains unresolved.</li>
+                  <li>What evidence supports the answer.</li>
+                  <li>Which issues require human judgment.</li>
+                </ul>
+              </div>
+              <div class="rail-card">
+                <h3>What the detector must avoid</h3>
+                <ul>
+                  <li>Escalating every emotional phrase as a crisis.</li>
+                  <li>Ignoring stage-specific risk during negotiation.</li>
+                  <li>Treating stale duplicates as new critical events.</li>
+                  <li>Triggering routes a viewer cannot authorize.</li>
+                </ul>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="section" id="routing">
+          <p class="section-tag">System Record / 04</p>
+          <h2>Alert Routing and Human Escalation</h2>
+          <p>The companion control problem is routing. A critical signal is only useful if it reaches the right human surface with the right amount of context and nothing more. This is where many collaboration systems become sloppy. They detect something important and then spray the underlying text to whichever channel is easiest. That approach may be fast, but it is not private and it is rarely defensible. The documented design instead routes a policy-approved summary through defined channels and keeps the fuller thread available only to viewers whose role, workspace membership, and case involvement permit access.</p>
+          <p>The routing design also recognizes that escalation is a coordination problem, not just a notification problem. An operations lead needs enough context to protect an SLA. An account owner needs commercial history and prior commitments. Legal or compliance reviewers need the precise issue type and access to the governed record, but not every surrounding conversational aside. By separating destination-specific summaries from the deeper underlying thread, the system avoids turning alerting into broad replication of sensitive text. That matters for privacy, but it also matters for discipline: people act faster when the route explains why they are receiving an item and what decision authority they are expected to exercise.</p>
+          <div class="figure-block">
+            <figure>
+              <svg viewBox="0 0 1100 560" role="img" aria-labelledby="routing-title routing-desc">
+                <title id="routing-title">Permission-bound alert routing</title>
+                <desc id="routing-desc">Alert-routing figure showing detector outputs crossing role-based permission checks into separate internal queues, with audit capture and blocked unauthorized routes.</desc>
+                <defs>
+                  <marker id="arrow-two" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#111111"></path>
+                  </marker>
+                </defs>
+                <rect x="22" y="22" width="1056" height="516" fill="#fcfcfc" stroke="#222222" stroke-width="2"></rect>
+                <text x="46" y="56" class="diagram-label">Figure B / Alert routing companion</text>
+                <text x="46" y="82" class="diagram-title">Role-bound escalation with explicit denies and audit capture</text>
+
+                <rect x="62" y="144" width="206" height="96" rx="12" fill="#ececec" stroke="#111111" stroke-width="1.8"></rect>
+                <text x="88" y="178" class="diagram-title">Critical-signal detector</text>
+                <text x="88" y="200" class="diagram-copy">rule hits, model score, SLA state</text>
+                <text x="88" y="220" class="diagram-copy">emits typed alert proposal</text>
+
+                <rect x="334" y="126" width="220" height="132" rx="12" fill="#ffffff" stroke="#111111" stroke-width="1.8"></rect>
+                <text x="360" y="160" class="diagram-title">Permission gate</text>
+                <text x="360" y="182" class="diagram-copy">role, workspace, account</text>
+                <text x="360" y="202" class="diagram-copy">retention class, legal hold</text>
+                <text x="360" y="222" class="diagram-copy">allow summary / deny raw text</text>
+
+                <rect x="334" y="322" width="220" height="110" rx="12" fill="#f5f5f5" stroke="#111111" stroke-width="1.8" stroke-dasharray="6 6"></rect>
+                <text x="360" y="356" class="diagram-title">Denied route</text>
+                <text x="360" y="378" class="diagram-copy">insufficient clearance</text>
+                <text x="360" y="398" class="diagram-copy">log attempt, show reason</text>
+
+                <rect x="636" y="96" width="170" height="86" rx="12" fill="#ffffff" stroke="#111111" stroke-width="1.8"></rect>
+                <text x="662" y="128" class="diagram-title">Priority ops queue</text>
+                <text x="662" y="149" class="diagram-copy">SLA rescue</text>
+
+                <rect x="636" y="208" width="170" height="86" rx="12" fill="#ffffff" stroke="#111111" stroke-width="1.8"></rect>
+                <text x="662" y="240" class="diagram-title">Account owner route</text>
+                <text x="662" y="261" class="diagram-copy">commercial context</text>
+
+                <rect x="636" y="320" width="170" height="86" rx="12" fill="#ffffff" stroke="#111111" stroke-width="1.8"></rect>
+                <text x="662" y="352" class="diagram-title">Legal or compliance</text>
+                <text x="662" y="373" class="diagram-copy">hard-stop review</text>
+
+                <rect x="636" y="432" width="170" height="86" rx="12" fill="#ffffff" stroke="#111111" stroke-width="1.8"></rect>
+                <text x="662" y="464" class="diagram-title">Summary-only feed</text>
+                <text x="662" y="485" class="diagram-copy">noncritical digest</text>
+
+                <rect x="878" y="180" width="150" height="180" rx="12" fill="#ececec" stroke="#111111" stroke-width="1.8"></rect>
+                <text x="904" y="214" class="diagram-title">Audit ledger</text>
+                <text x="904" y="236" class="diagram-copy">proposal</text>
+                <text x="904" y="260" class="diagram-copy">permission result</text>
+                <text x="904" y="284" class="diagram-copy">recipient</text>
+                <text x="904" y="308" class="diagram-copy">delivery state</text>
+                <text x="904" y="332" class="diagram-copy">analyst follow-up</text>
+
+                <line x1="268" y1="192" x2="334" y2="192" stroke="#111111" stroke-width="1.6" marker-end="url(#arrow-two)"></line>
+                <line x1="444" y1="258" x2="444" y2="322" stroke="#111111" stroke-width="1.6" marker-end="url(#arrow-two)"></line>
+                <line x1="554" y1="160" x2="636" y2="139" stroke="#111111" stroke-width="1.6" marker-end="url(#arrow-two)"></line>
+                <line x1="554" y1="182" x2="636" y2="251" stroke="#111111" stroke-width="1.6" marker-end="url(#arrow-two)"></line>
+                <line x1="554" y1="204" x2="636" y2="363" stroke="#111111" stroke-width="1.6" marker-end="url(#arrow-two)"></line>
+                <line x1="554" y1="226" x2="636" y2="475" stroke="#111111" stroke-width="1.6" marker-end="url(#arrow-two)"></line>
+                <line x1="806" y1="139" x2="878" y2="210" stroke="#111111" stroke-width="1.6" marker-end="url(#arrow-two)"></line>
+                <line x1="806" y1="251" x2="878" y2="250" stroke="#111111" stroke-width="1.6" marker-end="url(#arrow-two)"></line>
+                <line x1="806" y1="363" x2="878" y2="290" stroke="#111111" stroke-width="1.6" marker-end="url(#arrow-two)"></line>
+                <line x1="806" y1="475" x2="878" y2="330" stroke="#111111" stroke-width="1.6" marker-end="url(#arrow-two)"></line>
+                <line x1="554" y1="377" x2="878" y2="350" stroke="#111111" stroke-width="1.6" stroke-dasharray="5 5" marker-end="url(#arrow-two)"></line>
+
+                <text x="354" y="108" class="diagram-label">Only policy-approved summaries cross into broader channels</text>
+              </svg>
+              <figcaption>Figure B. Alerts are routed through a permission gate before delivery. Unauthorized recipients receive a deny outcome, not a redacted accident. Every proposal, decision, and destination is written to the audit ledger so the organization can inspect missed alerts, false positives, and improper access attempts.</figcaption>
+            </figure>
+          </div>
+          <p>That routing discipline is especially important for negotiation-stage items. The documented workflow explicitly routes those cases to humans instead of allowing the system to answer with false certainty. The same principle applies to legal, compliance, and executive exception traffic. The system can condense history, highlight contradictions, and surface the latest retrievable evidence, but the transfer of responsibility remains visible. A queue item moves to an account owner, legal reviewer, or operations lead with a reason code and a time stamp. That is how a collaboration tool stays operationally useful without pretending to own the decision.</p>
+          <p class="code-note">Permission check before route delivery</p>
+          <pre><code>function canDeliver(viewer, alert) {
+  return viewer.clearance >= alert.minClearance
+    && viewer.workspaces.includes(alert.workspaceId)
+    && viewer.accounts.includes(alert.accountId)
+    && !alert.legalHoldBlocksRawText;
+}</code></pre>
+          <p>Minimal checks like this are not the whole system, but they express the correct shape of the system. Delivery is role-aware, workspace-aware, and account-aware. Legal hold can further reduce what is shown. A private collaboration engine earns trust by failing closed when these conditions are not met, even if doing so occasionally slows a workflow that users would prefer to accelerate.</p>
+        </section>
+
+        <section class="section" id="limits">
+          <p class="section-tag">System Record / 05</p>
+          <h2>Permissions and Operating Limits</h2>
+          <p>The final point is the one private systems often avoid stating clearly: no external data egress is not automatic just because a model is hosted locally. This project reduces egress risk by keeping the core inference service on company-controlled infrastructure, using retrieval against internal stores, and maintaining a full audit trail of reads, summaries, and alerts. But those controls only hold if surrounding operations are equally disciplined. Network rules, log destinations, admin access, backup handling, export tools, and downstream notification channels can all weaken the boundary if they are left ungoverned.</p>
+          <p>That is why the case study ends with permissions and limits rather than with claims of seamless intelligence. The documented stack includes Dockerized services for repeatable releases and Heroku in the deployment story. Those facts can coexist with privacy goals only if the actual runtime placement, network isolation, and data-handling policy are explicit. Containerization improves repeatability. It does not by itself guarantee confidentiality. A hosted platform can improve deployment discipline. It does not by itself make comment data safe. The right interpretation is operational: the team built the system so that privacy could be enforced, inspected, and measured, not assumed.</p>
+          <p>There are also capability limits. Summaries are only as current as the indexed records and ingest health. Critical-signal detection depends on the quality of stakeholder-defined rules, the representativeness of golden sets, and the precision-recall threshold the business is willing to accept. Streaming responses improve responsiveness, but they do not remove the need to disclose uncertainty or to wait for human review in sensitive cases. The audit trail improves accountability, but it also introduces obligations around retention and internal access to logs. A serious private system acknowledges these constraints because operational trust grows from bounded claims.</p>
+          <p>In that sense, the system is intentionally anti-hype. It does not claim that a local model transforms private comments into perfect institutional memory. It claims something smaller and more useful: with the right ingestion discipline, retrieval filters, queue priorities, escalation policy, and audit instrumentation, teams can cut the time spent searching through internal discussion without loosening control over who sees what. That is a practical outcome. It is measurable with latency budgets, alert precision, recall on critical cases, and reduced manual review time. It is also durable, because it depends more on clear boundaries than on promotional language or the novelty of a single model release.</p>
+          <div class="split">
+            <div>
+              <div class="boundary">
+                <h3>Practical limits that remain</h3>
+                <ul>
+                  <li>Stale upstream systems can still poison a fresh retrieval path.</li>
+                  <li>Misconfigured notifications can leak more than the core inference tier.</li>
+                  <li>Precision gains in alerting may reduce recall if thresholds are tightened too aggressively.</li>
+                  <li>Human queues can become the next bottleneck if escalation volume is not tuned.</li>
+                </ul>
+              </div>
+            </div>
+            <aside>
+              <div class="rail-card">
+                <h3>What this system does claim</h3>
+                <ul>
+                  <li>Thread summarization grounded in retrieved internal evidence.</li>
+                  <li>Priority-aware processing with streaming responses.</li>
+                  <li>Proactive alerts with typed routes and recorded ownership.</li>
+                  <li>Permission checks before retrieval, synthesis, and delivery.</li>
+                </ul>
+              </div>
+              <div class="rail-card">
+                <h3>What it does not claim</h3>
+                <ul>
+                  <li>Perfect privacy without disciplined operations.</li>
+                  <li>Autonomous handling of negotiation or legal decisions.</li>
+                  <li>Reliable answers when source systems are outdated or contradictory.</li>
+                  <li>Meaningful evaluation without golden sets and latency gates.</li>
+                </ul>
+              </div>
+            </aside>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <section class="closing-note" aria-label="Closing note">
+      <p class="eyebrow">Closing Position</p>
+      <p>This case study is strongest where it is most restrained. It does not promise universal reasoning over private text. It describes a controlled collaboration system that narrows the problem: ingest internal comment streams, retrieve the latest allowed evidence, summarize for speed, detect critical signals, route them through permission gates, and record the path. That scope is what makes the privacy posture credible. The value comes from removing operational ambiguity without pretending that privacy, accuracy, or judgment arrive for free.</p>
+    </section>
+  </main>
+</body>
+</html>
