@@ -32,3 +32,7 @@
 
 - Task summary: This was the middle stretch where the project started feeling real. I kept going and tried to sketch the system architecture, major screens, and integration points, then cleaned up whatever looked confusing or weak from the earlier days. The middle part always takes longer than it should, mostly becuase one fix usually reveals two more things to clean up. I kept imagining how an actual operator would move through the steps so the project would not feel fake.
 - Deliverable: Ended the day with architecture note in hand, plus a few side notes on what still needed fixing later. I also left myself a few rough reminders for the next day so I would not have to rediscover the same context again.
+## 2024-05-23 - Day 6: Architecture
+
+- Task summary: Got stuck mid-afternoon and had to regroup — added a sanity check assertion that would catch obvious data shape issues early.
+- Deliverable: Nothing dramatic — just keeping things tidy.
