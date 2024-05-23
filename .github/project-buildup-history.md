@@ -40,3 +40,7 @@
 
 - Task summary: Circled back: found a duplicate function that slipped in during copy-paste. Removed it.
 - Deliverable: Wrapped it up properly this time.
+## 2024-05-23 - Day 6: Architecture
+
+- Task summary: Came back after lunch and realized resolved a merge conflict that came up when I switched branches to check something else.
+- Deliverable: One of those satisfying small wins.
