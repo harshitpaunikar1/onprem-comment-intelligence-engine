@@ -36,3 +36,7 @@
 
 - Task summary: Got stuck mid-afternoon and had to regroup — added a sanity check assertion that would catch obvious data shape issues early.
 - Deliverable: Nothing dramatic — just keeping things tidy.
+## 2024-05-23 - Day 6: Architecture
+
+- Task summary: Circled back: found a duplicate function that slipped in during copy-paste. Removed it.
+- Deliverable: Wrapped it up properly this time.
