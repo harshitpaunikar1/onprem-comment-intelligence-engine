@@ -44,3 +44,7 @@
 
 - Task summary: Came back after lunch and realized resolved a merge conflict that came up when I switched branches to check something else.
 - Deliverable: One of those satisfying small wins.
+## 2024-05-24 - Day 7: UI scaffold
+
+- Task summary: This was the middle stretch where the project started feeling real. I kept going and tried to build a simple HTML/CSS/JS shell for the main screens or flows, then cleaned up whatever looked confusing or weak from the earlier days. By now I had enough structure to keep going without staring at the screen too long, which honestly helped a lot. This kind of project only works if the logic feels practical, so I spent time checking the flow again and again.
+- Deliverable: Ended the day with interface skeleton in hand, plus a few side notes on what still needed fixing later. There were still a couple of loose parts, but nothing serious enough to block the next step.
