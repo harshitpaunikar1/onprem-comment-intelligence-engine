@@ -72,3 +72,7 @@
 
 - Task summary: Came back after lunch and realized found a duplicate function that slipped in during copy-paste. Removed it.
 - Deliverable: Pushed before end of day.
+## 2024-05-30 - Day 11: Documentation check
+
+- Task summary: Spent another hour on this: updated the requirements file — had missed one indirect dependency.
+- Deliverable: One of those satisfying small wins.
