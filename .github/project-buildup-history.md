@@ -68,3 +68,7 @@
 
 - Task summary: Closer to the end, I was mostly tightening things up instead of inventing new scope. The job for the day was to write the README with problem, scope, workflow, and usage notes so the final result looked a bit more complete. I was not trying to add anything fancy here, just making sure the thing looked complete enough to show someone. A lot of the work here was really about workflow thinking, not just screens or files.
 - Deliverable: Ended the day with documented project in hand, plus a few side notes on what still needed fixing later. It was not super polished, just stable enough that I felt okay moving forward.
+## 2024-05-30 - Day 11: Documentation check
+
+- Task summary: Came back after lunch and realized found a duplicate function that slipped in during copy-paste. Removed it.
+- Deliverable: Pushed before end of day.
