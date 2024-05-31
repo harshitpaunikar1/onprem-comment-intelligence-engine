@@ -84,3 +84,7 @@
 
 - Task summary: After stepping away for a bit, came back and resolved a merge conflict that came up when I switched branches to check something else.
 - Deliverable: Small fix, clean result.
+## 2024-05-31 - Day 12: Polish wrap
+
+- Task summary: Got stuck mid-afternoon and had to regroup — fixed the README section that was missing the setup step — embarrassing oversight.
+- Deliverable: Nothing dramatic — just keeping things tidy.
