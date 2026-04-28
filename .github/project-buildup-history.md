@@ -14,7 +14,7 @@
 - Deliverable: I wrapped up the day with current-state workflow mostly in place. It was not perfect, but it was good enough to keep the project moving. It was not super polished, just stable enough that I felt okay moving forward.
 ## 2024-05-18 - Day 2: Workflow mapping pass
 
-- Task summary: Weekend fix — the visualizations had overlapping labels in narrow viewports. Adjusted the figure size and padding.
+- Task summary: Weekend fix - the visualizations had overlapping labels in narrow viewports. Adjusted the figure size and padding.
 - Deliverable: Small fix, clean result.
 ## 2024-05-20 - Day 3: Scope pass
 
@@ -34,8 +34,8 @@
 - Deliverable: Ended the day with architecture note in hand, plus a few side notes on what still needed fixing later. I also left myself a few rough reminders for the next day so I would not have to rediscover the same context again.
 ## 2024-05-23 - Day 6: Architecture
 
-- Task summary: Got stuck mid-afternoon and had to regroup — added a sanity check assertion that would catch obvious data shape issues early.
-- Deliverable: Nothing dramatic — just keeping things tidy.
+- Task summary: Got stuck mid-afternoon and had to regroup - added a sanity check assertion that would catch obvious data shape issues early.
+- Deliverable: Nothing dramatic - just keeping things tidy.
 ## 2024-05-23 - Day 6: Architecture
 
 - Task summary: Circled back: found a duplicate function that slipped in during copy-paste. Removed it.
@@ -74,7 +74,7 @@
 - Deliverable: Pushed before end of day.
 ## 2024-05-30 - Day 11: Documentation check
 
-- Task summary: Spent another hour on this: updated the requirements file — had missed one indirect dependency.
+- Task summary: Spent another hour on this: updated the requirements file - had missed one indirect dependency.
 - Deliverable: One of those satisfying small wins.
 ## 2024-05-31 - Day 12: Polish wrap
 
@@ -86,5 +86,5 @@
 - Deliverable: Small fix, clean result.
 ## 2024-05-31 - Day 12: Polish wrap
 
-- Task summary: Got stuck mid-afternoon and had to regroup — fixed the README section that was missing the setup step — embarrassing oversight.
-- Deliverable: Nothing dramatic — just keeping things tidy.
+- Task summary: Got stuck mid-afternoon and had to regroup - fixed the README section that was missing the setup step - embarrassing oversight.
+- Deliverable: Nothing dramatic - just keeping things tidy.
